@@ -53,7 +53,7 @@ This repository implements a real-time, touchless elevator floor-selection syste
 
 This project implements a touchless method for selecting elevator floors using hand gestures. It leverages MediaPipe to get 21 hand landmarks per hand, applies a hybrid heuristic to infer which fingers are “up” (open) or “down” (closed), and then uses a small temporal state machine (with `HOLD_TIME` rules) to reduce accidental activations and confirm the user’s intent before triggering an action.
 
-The provided `EnhancedCode2.py` runs in real time, visualizes landmarks and state, and calls `simulate_move(floor_str)` when a floor selection is confirmed — `simulate_move()` currently prints/logs the selection and can be replaced with a real elevator API call.
+The provided `main.py` runs in real time, visualizes landmarks and state, and calls `simulate_move(floor_str)` when a floor selection is confirmed — `simulate_move()` currently prints/logs the selection and can be replaced with a real elevator API call.
 
 ---
 
@@ -72,34 +72,30 @@ The provided `EnhancedCode2.py` runs in real time, visualizes landmarks and stat
 * Python 3.8+
 * `opencv-python`
 * `mediapipe`
-* `numpy`
 
 Install dependencies:
 
 ```bash
-pip install opencv-python mediapipe numpy
+pip install opencv-python mediapipe
 ```
-
-You can pin versions in `requirements.txt` if needed.
-
 ---
 
 ## Quick start
 
 1. Clone or copy the repo into a working folder.
-2. Ensure the paper and images are placed under `docs/` (recommended) and `docs/images/`.
+2. Ensure the paper and images are placed under `images/`.
 3. Run the script:
 
 ```bash
-python EnhancedCode2.py
+python main.py
 ```
 
 The script opens the default camera (`CAM_ID = 0`) and draws landmarks/state overlays on the frame. Press `Esc` to exit.
 
-To run on a pre-recorded video, change the video capture source in `EnhancedCode2.py`:
+To run on a pre-recorded video, change the video capture source in `main.py`:
 
 ```python
-cap = cv2.VideoCapture("path/to/test_video.mp4")
+cap = cv2.VideoCapture(r"path/to/test_video.mp4")
 ```
 
 ---
@@ -127,7 +123,7 @@ See the embedded state machine diagram for full transitions.
 
 * `single_X` — a single hand showing digit X (0–9).
 * `both_open` / `both_fist` — both hands open or both hands in fist used as modes to start/finish entry.
-* Two-hand fusion logic allows multi-digit inputs (e.g., left-hand gives tens, right-hand gives units depending on design).
+* Two-hand fusion logic allows multi-digit inputs.
 
 Examples of representative frames with landmarks are shown above in the **Gesture examples** gallery.
 
@@ -135,7 +131,7 @@ Examples of representative frames with landmarks are shown above in the **Gestur
 
 ## Key configuration parameters
 
-These are defined and tunable in `EnhancedCode2.py`:
+These are defined and tunable in `main.py`:
 
 * `CAM_ID = 0` — camera index
 * `UNDEFINED_HOLD_TIME = 2.0` — time to hold for undefined/uncertain gestures
@@ -148,31 +144,6 @@ Tune these values depending on camera distance, lighting, and expected user beha
 
 ---
 
-## Project structure (recommended)
-
-```
-.
-├─ README.md
-├─ EnhancedCode2.py
-├─ requirements.txt
-├─ docs/
-│  ├─ Gesture-Based Elevator Control System for Real-Time Floor Selection.pdf
-│  ├─ Gesture-Based Elevator Control System for Real-Time Floor Selection.docx
-│  └─ images/
-│     ├─ banner.jpeg
-│     ├─ pipeline.jpeg
-│     ├─ state_machine.png
-│     ├─ gest1.jpeg
-│     ├─ gest2.jpeg
-│     ├─ gest3.jpeg
-│     └─ gest4.jpeg
-└─ data/        # optional: dataset videos & ground-truth
-```
-
-Put the paper and images into the `docs/` folder so GitHub shows them inline.
-
----
-
 ## Reported evaluation (from the paper)
 
 * **Dataset**: 70 videos, 4 different elevator environments (includes gloved-hand scenarios).
@@ -180,7 +151,6 @@ Put the paper and images into the `docs/` folder so GitHub shows them inline.
 * **Glove-specific accuracy**: ~85.71%.
 * **By length**: single-digit 96%, two-digit 95.65%, three-digit 81.81%.
 
-> To reproduce these numbers you need the original dataset (videos + ground-truth labels) and an evaluation script that compares system outputs to ground truth. I can help generate an `evaluate.py` if you provide the dataset.
 
 ---
 
@@ -196,7 +166,6 @@ Put the paper and images into the `docs/` folder so GitHub shows them inline.
 ## Suggested next steps / productionization
 
 * Replace `simulate_move()` with a secure elevator API (HTTP/MQTT/serial) and add authentication + safety checks.
-* Use `time.monotonic()` for timing stability across system time changes.
 * Add logging (file-based) and CSV export of recognized sequences for offline analysis.
 * Add unit tests for the heuristic functions using synthetic landmark inputs.
 * Consider a lightweight temporal model (e.g., 1D-CNN or small LSTM) to further reduce transient misclassifications.
@@ -206,5 +175,29 @@ Put the paper and images into the `docs/` folder so GitHub shows them inline.
 
 ## Citation & license
 
-Suggested license: **MIT**. Add a `LICENSE` file to the repo if you choose MIT.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+```
+MIT License
+
+Copyright (c) 2024 Kian
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+```
 
