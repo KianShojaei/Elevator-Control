@@ -33,19 +33,19 @@ This repository implements a real-time, touchless elevator floor-selection syste
 
 **State machine** — how gestures are confirmed to become floor numbers
 
-![State machine](docs/images/state_machine.png)
+![State machine](images/state_machine.png)
 
 **Gesture examples (MediaPipe landmark overlays)**
 
 <div align="center">
-  <img src="docs/images/gest1.jpeg" width="320" alt="gesture example 1" />
-  <img src="docs/images/gest2.jpeg" width="320" alt="gesture example 2" />
-  <img src="docs/images/gest3.jpeg" width="320" alt="gesture example 3" />
+  <img src="images/both_open.png" width="320" alt="gesture example 1" />
+  <img src="images/both_fist.png" width="320" alt="gesture example 2" />
+  <img src="images/undefined.png" width="320" alt="gesture example 3" />
   <br/>
-  <img src="docs/images/gest4.jpeg" width="320" alt="gesture example 4" />
+  <img src="images/3.png" width="320" alt="gesture example 4" />
+  <img src="images/9.png" width="320" alt="gesture example 5" />
 </div>
 
-> Tip: place the PDF and images under `docs/` and `docs/images/` in your repo so GitHub presents them inline.
 
 ---
 
