@@ -29,7 +29,7 @@ This repository implements a real-time, touchless elevator floor-selection syste
 
 **Processing pipeline**
 
-![Processing pipeline](docs/images/pipeline.jpeg)
+![Processing pipeline](images/Pipeline_Sequence_Diagram.jpg)
 
 **State machine** — how gestures are confirmed to become floor numbers
 
