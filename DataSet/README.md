@@ -1,0 +1,1 @@
+A small **sample** of the dataset is provided with this repository as a compressed RAR file named `sample.rar` (attached to the release tagged `sample`). The archive contains ten randomly selected videos from the full collection together with their corresponding label files, so you can quickly inspect the data format and labels before downloading the entire set.
