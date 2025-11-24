@@ -17,7 +17,6 @@ This repository implements a real-time, touchless elevator floor-selection syste
   * [State machine](#state-machine)
   * [Gesture vocabulary & examples](#gesture-vocabulary--examples)
 * [Key configuration parameters](#key-configuration-parameters)
-* [Project structure (recommended)](#project-structure-recommended)
 * [Reported evaluation (from the paper)](#reported-evaluation-from-the-paper)
 * [Limitations & safety notes](#limitations--safety-notes)
 * [Suggested next steps / productionization](#suggested-next-steps--productionization)
