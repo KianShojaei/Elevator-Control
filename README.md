@@ -1,6 +1,6 @@
 # Gesture-Based Elevator Control System for Real-Time Floor Selection
 
-**Abstract.** This repository implements a real-time, touchless elevator floor-selection system that recognizes hand gestures using MediaPipe hand landmarks and a lightweight heuristic state machine. The system fuses single- and two-hand gestures, uses hold-time logic to avoid accidental activations, and was evaluated on a 70-video dataset (reported overall accuracy ≈ 91.4%). See the full paper for design details and figures: `Gesture-Based Elevator Control System for Real-Time Floor Selection.pdf`.
+This repository implements a real-time, touchless elevator floor-selection system that recognizes hand gestures using MediaPipe hand landmarks and a lightweight heuristic state machine. The system fuses single- and two-hand gestures, uses hold-time logic to avoid accidental activations, and was evaluated on a 70-video dataset (reported overall accuracy ≈ 91.4%). See the full paper for design details and figures: `Gesture-Based Elevator Control System for Real-Time Floor Selection.pdf`.
 
 ---
 
