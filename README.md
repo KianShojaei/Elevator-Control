@@ -1,202 +1,310 @@
 # Gesture-Based Elevator Control System for Real-Time Floor Selection
 
-This repository implements a real-time, touchless elevator floor-selection system that recognizes hand gestures using MediaPipe hand landmarks and a lightweight heuristic state machine. The system fuses single- and two-hand gestures, uses hold-time logic to avoid accidental activations, and was evaluated on a 70-video dataset (reported overall accuracy ≈ 91.4%). See the full paper for design details and figures: `Gesture-Based Elevator Control System for Real-Time Floor Selection.pdf`.
+A real-time, touchless elevator floor-selection system based on hand landmarks, lightweight geometric heuristics, temporal smoothing, and a finite-state interaction model.
+
+The implementation accompanies the paper **“Gesture-Based Elevator Control System for Real-Time Floor Selection”**, presented at the **10th International Congress on Fuzzy and Intelligent Systems (CFIS 2025)**.
+
+**Paper DOI:** [10.1109/CFIS68949.2025.11652063](https://doi.org/10.1109/CFIS68949.2025.11652063)  
+**Author:** Kian Shojaei  
+**Supervisor / Co-author:** Elham Shabaninia
 
 ---
 
-## Table of contents
+## Research Overview
 
-* [Quick demo (figures)](#quick-demo-figures)
-* [Overview](#overview)
-* [Highlights](#highlights)
-* [Requirements](#requirements)
-* [Quick start](#quick-start)
-* [How it works (concise)](#how-it-works-concise)
+The system provides a contactless method for selecting positive and negative elevator floors through hand gestures. It is designed around a lightweight, interpretable pipeline rather than a large end-to-end neural classifier.
 
-  * [Processing pipeline](#processing-pipeline)
-  * [State machine](#state-machine)
-  * [Gesture vocabulary & examples](#gesture-vocabulary--examples)
-* [Key configuration parameters](#key-configuration-parameters)
-* [Reported evaluation (from the paper)](#reported-evaluation-from-the-paper)
-* [Limitations & safety notes](#limitations--safety-notes)
-* [Suggested next steps / productionization](#suggested-next-steps--productionization)
-* [Citation & license](#citation--license)
+The implementation combines:
+
+- **MediaPipe Hands** for real-time 21-point hand landmark extraction
+- **Handedness- and palm-orientation-aware thumb detection**
+- **Hybrid finger-state heuristics** for the remaining fingers
+- **Single- and two-hand gesture aggregation**
+- **Short-term temporal smoothing** using a history buffer
+- **Hold-time confirmation** to reduce transient detections
+- **A finite-state machine** for positive/negative floor entry and command finalization
+- A simulation layer that prints the selected floor instead of controlling physical elevator hardware
+
+The complete system was evaluated in the accompanying paper on a custom dataset of **70 annotated videos recorded across four elevator environments**.
 
 ---
 
-## Quick demo (figures)
+## System Pipeline
 
-**Processing pipeline**
+The runtime flow is:
+
+`Camera → RGB conversion → MediaPipe Hands → Landmark analysis → Finger-state estimation → Gesture interpretation → Temporal smoothing → State machine → Floor selection`
 
 ![Processing pipeline](images/Pipeline_Sequence_Diagram.jpg)
 
-**State machine** — how gestures are confirmed to become floor numbers
+The pipeline deliberately separates perception from interaction logic. This makes the system easier to inspect, tune, and extend toward a hardware interface.
+
+---
+
+## State Machine
+
+The interaction is organized around three primary states:
+
+- **IDLE** — waiting for a mode-selection gesture
+- **POSITIVE_LISTEN** — collecting digits for a positive floor
+- **NEGATIVE_LISTEN** — collecting digits for a negative floor
+
+A sustained **both-open** gesture starts or finalizes positive-floor entry, while a sustained **both-fist** gesture starts or finalizes negative-floor entry.
 
 ![State machine](images/state_machine.png)
 
-**Gesture examples (MediaPipe landmark overlays)**
-
-<div align="center">
-  <img src="images/both_open.png" width="320" alt="gesture example 1" />
-  <img src="images/both_fist.png" width="320" alt="gesture example 2" />
-  <img src="images/undefined.png" width="320" alt="gesture example 3" />
-  <br/>
-  <img src="images/3.png" width="320" alt="gesture example 4" />
-  <img src="images/9.png" width="320" alt="gesture example 5" />
-</div>
-
+The implementation also uses neutral/debounce periods and gesture-specific hold times to reduce repeated registration of the same gesture.
 
 ---
 
-## Overview
+## Gesture Vocabulary
 
-This project implements a touchless method for selecting elevator floors using hand gestures. It leverages MediaPipe to get 21 hand landmarks per hand, applies a hybrid heuristic to infer which fingers are “up” (open) or “down” (closed), and then uses a small temporal state machine (with `HOLD_TIME` rules) to reduce accidental activations and confirm the user’s intent before triggering an action.
+The system supports:
 
-The provided `main.py` runs in real time, visualizes landmarks and state, and calls `simulate_move(floor_str)` when a floor selection is confirmed — `simulate_move()` currently prints/logs the selection and can be replaced with a real elevator API call.
+| Gesture | Meaning |
+|---|---|
+| `both_open` | Start/finalize positive-floor input |
+| `both_fist` | Start/finalize negative-floor input |
+| `single_0` … `single_5` | Single-hand digits 0–5 |
+| `both_6` … `both_9` | Two-hand digit encodings 6–9 |
+| `undefined` | Ambiguous or unsupported configuration |
+| `no_hand` | No hand detected |
+
+Digits 6–9 are formed by aggregating the visible fingers across both detected hands. The implementation applies the same temporal confirmation logic to these gestures.
+
+### Representative Gesture Frames
+
+All gesture figures originally included with the project are retained and used below.
+
+**Both hands open**
+
+![Both hands open](images/both_open.png)
+
+**Both hands in a fist**
+
+![Both hands fist](images/both_fist.png)
+
+**Undefined / ambiguous gesture**
+
+![Undefined gesture](images/undefined.png)
+
+**Digit 3**
+
+![Digit 3](images/3.png)
+
+**Digit 9**
+
+![Digit 9](images/9.png)
 
 ---
 
-## Highlights
+## Implementation Details
 
-* Real-time single- and two-hand gesture detection
-* Robust thumb detection using handedness + palm-orientation check
-* Temporal smoothing and hold-time based state machine to avoid accidental selections
-* Tested on multiple elevator scenes, including gloved hands scenarios
-* Easy to extend to real elevator hardware via `simulate_move()`
+### Hand Landmark Processing
+
+For each detected hand, the implementation uses MediaPipe landmarks to estimate finger states.
+
+The four non-thumb fingers are evaluated using a wrist-relative distance comparison:
+
+`d(tip, wrist) > d(PIP, wrist)`
+
+The thumb is handled separately because its motion is more sensitive to handedness and whether the palm or back of the hand faces the camera.
+
+The implementation therefore combines:
+
+1. MediaPipe handedness
+2. Palm/back-of-hand orientation
+3. Thumb tip and IP-joint relationships
+4. Wrist-relative distances for the other fingers
+5. A secondary fist heuristic based on closed fingers and thumb position
+
+This keeps the recognition logic deterministic and directly inspectable.
+
+### Temporal Filtering
+
+The raw gesture prediction is stored in a short history buffer:
+
+`deque(maxlen=5)`
+
+Once enough observations are available, the most frequent gesture in the recent history is used as the current gesture token.
+
+A candidate gesture must then remain stable for its corresponding hold interval before it is committed.
+
+This two-stage filtering strategy separates:
+
+- **frame-level recognition**, from
+- **interaction-level confirmation**.
 
 ---
 
-## Requirements
+## Configuration
 
-* Python 3.8+
-* `opencv-python`
-* `mediapipe`
+The current values in `main.py` are:
 
-Install dependencies:
+| Parameter | Value | Purpose |
+|---|---:|---|
+| `CAM_ID` | `0` | Default camera index |
+| `UNDEFINED_HOLD_TIME` | `2.0` s | Confirmation period for undefined gestures |
+| `HOLD_TIME` | `0.48` s | Default gesture confirmation time |
+| `HOLD_TIME_ZERO` | `1.0` s | Longer confirmation for digit 0 |
+| `NEUTRAL_HOLD_TIME` | `0.1` s | Neutral/debounce interval |
+| `max_num_hands` | `2` | Maximum simultaneous hands |
+| `min_detection_confidence` | `0.7` | MediaPipe detection threshold |
+| `min_tracking_confidence` | `0.5` | MediaPipe tracking threshold |
+
+These values are implementation parameters and can be adjusted for different camera positions, lighting conditions, and interaction requirements.
+
+---
+
+## Installation
+
+Clone the repository and install the required Python packages:
 
 ```bash
-pip install opencv-python mediapipe
+pip install -r requirements.txt
 ```
+
+The main dependencies are:
+
+- Python
+- OpenCV
+- MediaPipe
+- NumPy
+
 ---
 
-## Quick start
+## Running the System
 
-1. Clone or copy the repo into a working folder.
-2. Ensure the paper and images are placed under `images/`.
-3. Run the script:
+Start the real-time webcam application with:
 
 ```bash
 python main.py
 ```
 
-The script opens the default camera (`CAM_ID = 0`) and draws landmarks/state overlays on the frame. Press `Esc` to exit.
+The application:
 
-To run on a pre-recorded video, change the video capture source in `main.py`:
+1. Opens the configured camera.
+2. Detects up to two hands.
+3. Draws MediaPipe landmarks.
+4. Estimates the current gesture.
+5. Applies temporal smoothing.
+6. Updates the interaction state.
+7. Displays the current state, mode, registered digits, and gesture.
 
-```python
-cap = cv2.VideoCapture(r"path/to/test_video.mp4")
+Press **Esc** to exit.
+
+### Hardware Interface
+
+The current `simulate_move()` function is intentionally a simulation layer. It reports the requested floor to the console and **does not send commands to a physical elevator**.
+
+Any real hardware integration would require an independently engineered control interface, authentication, safety interlocks, fault handling, logging, and validation before deployment.
+
+---
+
+## Dataset
+
+The project includes a small sample and documentation for the complete dataset.
+
+- **70 videos** in the evaluation dataset
+- **4 elevator environments**
+- Positive and negative floor requests
+- Single-, two-, and three-digit selections
+- Gloved-hand samples
+- Variation in elevator geometry and illumination
+
+See [DataSet/README.md](DataSet/README.md) for sample-data access and the full-dataset information.
+
+---
+
+## Reported Evaluation
+
+The following results are **reported in the accompanying paper** and are not presented as a new benchmark in this repository.
+
+### Overall and condition-wise results
+
+| Evaluation condition | Reported accuracy |
+|---|---:|
+| Positive-floor samples | 94.44% |
+| Negative-floor samples | 88.23% |
+| Glove samples | 85.71% |
+| Overall | **91.42%** |
+
+### By floor-number length
+
+| Floor-number length | Reported accuracy |
+|---|---:|
+| Single digit | 96.00% |
+| Two digits | 95.65% |
+| Three digits | 81.81% |
+
+The paper reports **64 successful selections out of 70 trials**, corresponding to an overall empirical success rate of 91.42%.
+
+---
+
+## Limitations
+
+The reported experiments and the current implementation identify several limitations:
+
+- **0 ↔ 1 ambiguity:** a closed fist and a thumb-up pose can be difficult to distinguish in some orientations.
+- **Motion blur and landmark dropout:** fast motion, occlusion, and difficult lighting can reduce landmark quality.
+- **Multi-digit error propagation:** one incorrectly recognized digit can affect the final floor sequence.
+- **Limited evaluation set:** the reported dataset contains 70 videos across four elevator environments.
+- **No physical elevator interface:** `simulate_move()` is a software stub rather than a hardware control implementation.
+- **Person-to-hand association:** additional work is needed for more complex multi-person scenes.
+
+These limitations are part of the research context and should be considered before interpreting the reported accuracy as general deployment performance.
+
+---
+
+## Future Work
+
+The paper discusses several directions for further development:
+
+- More robust thumb/fist discrimination
+- Adaptive thresholds based on palm size
+- Larger and more diverse validation datasets
+- Additional low-light, occlusion, and glove samples
+- More extensive temporal modeling
+- Improved person-to-hand association
+- Secure integration with an elevator control API
+- Systematic logging and automated testing
+
+---
+
+## Repository Structure
+
+```text
+Elevator-Control/
+├── main.py
+├── requirements.txt
+├── Gesture-Based Elevator Control System for Real-Time Floor Selection.pdf
+├── LICENSE
+├── DataSet/
+│   └── README.md
+└── images/
+    ├── Pipeline_Sequence_Diagram.jpg
+    ├── state_machine.png
+    ├── both_open.png
+    ├── both_fist.png
+    ├── undefined.png
+    ├── 3.png
+    └── 9.png
 ```
 
 ---
 
-## How it works (concise)
+## Paper
 
-### Processing pipeline
+The complete paper is intended to be kept with the implementation:
 
-1. Capture frame → convert to RGB.
-2. MediaPipe Hand model extracts 21 landmarks per detected hand.
-3. `fingers_up_final_hybrid` (heuristic): uses tip↔PIP/wrist distances normalized by palm size + handedness/palm-facing checks to decide each finger’s state.
-4. `interpret_gesture`: maps finger-state patterns (single-hand or fused two-hand patterns) to digits or special tokens (`both_open`, `both_fist`, `undefined`).
-5. State machine: uses `HOLD_TIME` thresholds and neutral/debounce periods to confirm user intent (see state-machine diagram above).
-6. On confirm → `simulate_move(floor_str)` is called.
+[Gesture-Based Elevator Control System for Real-Time Floor Selection.pdf](./Gesture-Based%20Elevator%20Control%20System%20for%20Real-Time%20Floor%20Selection.pdf)
 
-### State machine
+**Citation**
 
-* **IDLE**: waiting for a clear `both_open` or `both_fist` to start positive/negative listening.
-* **POSITIVE_LISTEN / NEGATIVE_LISTEN**: accumulate digits as user holds gestures; transitions use time thresholds (`HOLD_TIME`, `HOLD_TIME_ZERO`).
-* **ACCEPT**: when finished, dispatch the floor selection and reset to IDLE (with a neutral hold to avoid double-trigger).
-
-See the embedded state machine diagram for full transitions.
-
-### Gesture vocabulary & examples
-
-* `single_X` — a single hand showing digit X (0–9).
-* `both_open` / `both_fist` — both hands open or both hands in fist used as modes to start/finish entry.
-* Two-hand fusion logic allows multi-digit inputs.
-
-Examples of representative frames with landmarks are shown above in the **Gesture examples** gallery.
+> K. Shojaei and E. Shabaninia, “Gesture-Based Elevator Control System for Real-Time Floor Selection,” in *2025 10th International Congress on Fuzzy and Intelligent Systems (CFIS)*, 2025, doi: 10.1109/CFIS68949.2025.11652063.
 
 ---
 
-## Key configuration parameters
+## License
 
-These are defined and tunable in `main.py`:
-
-* `CAM_ID = 0` — camera index
-* `UNDEFINED_HOLD_TIME = 2.0` — time to hold for undefined/uncertain gestures
-* `HOLD_TIME = 0.4` — default hold-to-confirm time for digits
-* `HOLD_TIME_ZERO = 1.0` — longer hold for `0` / fist (to reduce 0↔1 mistakes)
-* `NEUTRAL_HOLD_TIME = 0.1` — short neutral debounce
-* MediaPipe confidences: `min_detection_confidence = 0.7`, `min_tracking_confidence = 0.5`
-
-Tune these values depending on camera distance, lighting, and expected user behavior.
-
----
-
-## Reported evaluation (from the paper)
-
-* **Dataset**: 70 videos, 4 different elevator environments (includes gloved-hand scenarios).
-* **Overall accuracy**: ~91.42% (64/70 successful runs).
-* **Glove-specific accuracy**: ~85.71%.
-* **By length**: single-digit 96%, two-digit 95.65%, three-digit 81.81%.
-
-
----
-
-## Limitations & safety notes
-
-* **0 ↔ 1 confusion** (fist vs thumb) is the most common error; code includes heuristics to mitigate it but it may still occur.
-* **Lighting and motion blur** can cause landmark dropout; smoothing and temporal filtering help but are not perfect.
-* **Production hardware**: the current `simulate_move()` is a stub — connecting to a real elevator must include authentication, safety interlocks, and multi-party validation (do **not** directly connect to elevators without safety engineering and verification).
-* Test thoroughly under real-world conditions (different users, camera heights, hand sizes, gloves, occlusions) before any deployment.
-
----
-
-## Suggested next steps / productionization
-
-* Replace `simulate_move()` with a secure elevator API (HTTP/MQTT/serial) and add authentication + safety checks.
-* Add logging (file-based) and CSV export of recognized sequences for offline analysis.
-* Add unit tests for the heuristic functions using synthetic landmark inputs.
-* Consider a lightweight temporal model (e.g., 1D-CNN or small LSTM) to further reduce transient misclassifications.
-* Expand dataset for more lighting, ethnicities, gloves, and camera positions.
-
----
-
-## Citation & license
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-```
-MIT License
-
-Copyright (c) 2025 Kian
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
-```
-
+This project is released under the [MIT License](LICENSE).
