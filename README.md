@@ -37,7 +37,7 @@ The runtime flow is:
 
 ![Processing pipeline](images/Pipeline_Sequence_Diagram.jpg)
 
-The pipeline deliberately separates perception from interaction logic. This makes the system easier to inspect, tune, and extend toward a hardware interface.
+The pipeline deliberately separates perception from interaction logic, making the implementation easier to inspect and extend.
 
 ---
 
@@ -59,8 +59,6 @@ The implementation also uses neutral/debounce periods and gesture-specific hold 
 
 ## Gesture Vocabulary
 
-The system supports:
-
 | Gesture | Meaning |
 |---|---|
 | `both_open` | Start/finalize positive-floor input |
@@ -69,8 +67,6 @@ The system supports:
 | `both_6` … `both_9` | Two-hand digit encodings 6–9 |
 | `undefined` | Ambiguous or unsupported configuration |
 | `no_hand` | No hand detected |
-
-Digits 6–9 are formed by aggregating the visible fingers across both detected hands. The implementation applies the same temporal confirmation logic to these gestures.
 
 ### Representative Gesture Frames
 
@@ -102,23 +98,13 @@ All gesture figures originally included with the project are retained and used b
 
 ### Hand Landmark Processing
 
-For each detected hand, the implementation uses MediaPipe landmarks to estimate finger states.
-
 The four non-thumb fingers are evaluated using a wrist-relative distance comparison:
 
 `d(tip, wrist) > d(PIP, wrist)`
 
-The thumb is handled separately because its motion is more sensitive to handedness and whether the palm or back of the hand faces the camera.
+The thumb is handled separately because its motion is more sensitive to handedness and palm orientation.
 
-The implementation therefore combines:
-
-1. MediaPipe handedness
-2. Palm/back-of-hand orientation
-3. Thumb tip and IP-joint relationships
-4. Wrist-relative distances for the other fingers
-5. A secondary fist heuristic based on closed fingers and thumb position
-
-This keeps the recognition logic deterministic and directly inspectable.
+The implementation combines MediaPipe handedness, palm/back-of-hand orientation, thumb geometry, wrist-relative finger distances, and a secondary fist heuristic.
 
 ### Temporal Filtering
 
@@ -126,14 +112,9 @@ The raw gesture prediction is stored in a short history buffer:
 
 `deque(maxlen=5)`
 
-Once enough observations are available, the most frequent gesture in the recent history is used as the current gesture token.
+The most frequent recent token is used as the current gesture, followed by gesture-specific hold-time confirmation.
 
-A candidate gesture must then remain stable for its corresponding hold interval before it is committed.
-
-This two-stage filtering strategy separates:
-
-- **frame-level recognition**, from
-- **interaction-level confirmation**.
+This separates frame-level recognition from interaction-level confirmation.
 
 ---
 
@@ -152,75 +133,43 @@ The current values in `main.py` are:
 | `min_detection_confidence` | `0.7` | MediaPipe detection threshold |
 | `min_tracking_confidence` | `0.5` | MediaPipe tracking threshold |
 
-These values are implementation parameters and can be adjusted for different camera positions, lighting conditions, and interaction requirements.
-
 ---
 
 ## Installation
-
-Clone the repository and install the required Python packages:
 
 ```bash
 pip install -r requirements.txt
 ```
 
-The main dependencies are:
-
-- Python
-- OpenCV
-- MediaPipe
-- NumPy
-
----
-
 ## Running the System
-
-Start the real-time webcam application with:
 
 ```bash
 python main.py
 ```
 
-The application:
-
-1. Opens the configured camera.
-2. Detects up to two hands.
-3. Draws MediaPipe landmarks.
-4. Estimates the current gesture.
-5. Applies temporal smoothing.
-6. Updates the interaction state.
-7. Displays the current state, mode, registered digits, and gesture.
+The application opens the configured camera, detects hands, draws landmarks, estimates gestures, applies temporal smoothing, updates the state machine, and displays the current interaction state.
 
 Press **Esc** to exit.
 
 ### Hardware Interface
 
-The current `simulate_move()` function is intentionally a simulation layer. It reports the requested floor to the console and **does not send commands to a physical elevator**.
+The current `simulate_move()` function is a simulation layer. It reports the requested floor and **does not control physical elevator hardware**.
 
-Any real hardware integration would require an independently engineered control interface, authentication, safety interlocks, fault handling, logging, and validation before deployment.
+A real hardware integration would require independently engineered control logic, authentication, safety interlocks, fault handling, logging, and validation.
 
 ---
 
 ## Dataset
 
-The project includes a small sample and documentation for the complete dataset.
+The evaluation dataset contains **70 annotated videos** recorded across four elevator environments, including positive and negative floors, multi-digit selections, and gloved-hand samples.
 
-- **70 videos** in the evaluation dataset
-- **4 elevator environments**
-- Positive and negative floor requests
-- Single-, two-, and three-digit selections
-- Gloved-hand samples
-- Variation in elevator geometry and illumination
-
-See [DataSet/README.md](DataSet/README.md) for sample-data access and the full-dataset information.
+See [DataSet/README.md](DataSet/README.md) for dataset access information.
 
 ---
 
 ## Reported Evaluation
 
-The following results are **reported in the accompanying paper** and are not presented as a new benchmark in this repository.
-
-### Overall and condition-wise results
+The following results are **reported in the accompanying paper**.
 
 | Evaluation condition | Reported accuracy |
 |---|---:|
@@ -229,45 +178,32 @@ The following results are **reported in the accompanying paper** and are not pre
 | Glove samples | 85.71% |
 | Overall | **91.42%** |
 
-### By floor-number length
-
 | Floor-number length | Reported accuracy |
 |---|---:|
 | Single digit | 96.00% |
 | Two digits | 95.65% |
 | Three digits | 81.81% |
 
-The paper reports **64 successful selections out of 70 trials**, corresponding to an overall empirical success rate of 91.42%.
+The paper reports **64 successful selections out of 70 trials**.
 
 ---
 
 ## Limitations
 
-The reported experiments and the current implementation identify several limitations:
+The paper and implementation identify several limitations:
 
-- **0 ↔ 1 ambiguity:** a closed fist and a thumb-up pose can be difficult to distinguish in some orientations.
-- **Motion blur and landmark dropout:** fast motion, occlusion, and difficult lighting can reduce landmark quality.
-- **Multi-digit error propagation:** one incorrectly recognized digit can affect the final floor sequence.
-- **Limited evaluation set:** the reported dataset contains 70 videos across four elevator environments.
-- **No physical elevator interface:** `simulate_move()` is a software stub rather than a hardware control implementation.
-- **Person-to-hand association:** additional work is needed for more complex multi-person scenes.
-
-These limitations are part of the research context and should be considered before interpreting the reported accuracy as general deployment performance.
+- **0 ↔ 1 ambiguity** between closed-fist and thumb-up poses
+- Landmark dropout under motion blur, occlusion, or difficult lighting
+- Error propagation in multi-digit sequences
+- Limited evaluation set of 70 videos
+- No physical elevator interface in the current implementation
+- Further work needed for person-to-hand association in multi-person scenes
 
 ---
 
 ## Future Work
 
-The paper discusses several directions for further development:
-
-- More robust thumb/fist discrimination
-- Adaptive thresholds based on palm size
-- Larger and more diverse validation datasets
-- Additional low-light, occlusion, and glove samples
-- More extensive temporal modeling
-- Improved person-to-hand association
-- Secure integration with an elevator control API
-- Systematic logging and automated testing
+Future directions discussed in the paper include improved thumb/fist discrimination, adaptive palm-size scaling, larger and more diverse datasets, stronger temporal modeling, improved person-to-hand association, and secure elevator-interface integration.
 
 ---
 
@@ -295,7 +231,7 @@ Elevator-Control/
 
 ## Paper
 
-The complete paper is intended to be kept with the implementation:
+The complete paper is included with the repository:
 
 [Gesture-Based Elevator Control System for Real-Time Floor Selection.pdf](./Gesture-Based%20Elevator%20Control%20System%20for%20Real-Time%20Floor%20Selection.pdf)
 
