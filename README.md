@@ -213,7 +213,6 @@ Future directions discussed in the paper include improved thumb/fist discriminat
 Elevator-Control/
 ├── main.py
 ├── requirements.txt
-├── Gesture-Based Elevator Control System for Real-Time Floor Selection.pdf
 ├── LICENSE
 ├── DataSet/
 │   └── README.md
@@ -233,7 +232,7 @@ Elevator-Control/
 
 The complete paper is included with the repository:
 
-[Gesture-Based Elevator Control System for Real-Time Floor Selection.pdf](./Gesture-Based%20Elevator%20Control%20System%20for%20Real-Time%20Floor%20Selection.pdf)
+[IEEE Xplore / DOI](https://doi.org/10.1109/CFIS68949.2025.11652063)
 
 **Citation**
 
