@@ -6,7 +6,7 @@ import numpy as np  # Used for array and numerical operations where needed.
 
 # ---------- Configuration ----------
 UNDEFINED_HOLD_TIME = 2.0
-HOLD_TIME = 0.48
+HOLD_TIME = 0.4
 HOLD_TIME_ZERO = 1
 NEUTRAL_HOLD_TIME = 0.1
 CAM_ID = 0
