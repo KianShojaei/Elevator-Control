@@ -226,9 +226,9 @@ Elevator-Control/
 
 ## Paper
 
-The complete paper is included with the repository:
+The research presented in this repository is described in the following conference paper. The full paper is available through the DOI below.
 
-[IEEE Xplore / DOI](https://doi.org/10.1109/CFIS68949.2025.11652063)
+[Paper DOI](https://doi.org/10.1109/CFIS68949.2025.11652063)
 
 **Citation**
 
