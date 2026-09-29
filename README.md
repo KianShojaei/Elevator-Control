@@ -184,7 +184,6 @@ The following results are **reported in the accompanying paper**.
 | Two digits | 95.65% |
 | Three digits | 81.81% |
 
-The paper reports **64 successful selections out of 70 trials**.
 
 ---
 
