@@ -187,16 +187,13 @@ The following results are **reported in the accompanying paper**.
 
 ---
 
-## Limitations
+## Limitations and Observed Failure Modes
 
-The paper and implementation identify several limitations:
+- The reported evaluation identified several recurring failure modes, including confusion between closed-fist and thumb-up poses (0 vs. 1), intermittent thumb misclassification, missed gesture finalization when the hand briefly leaves the camera frame, and landmark dropouts caused by motion blur or extreme lighting.
 
-- **0 ↔ 1 ambiguity** between closed-fist and thumb-up poses
-- Landmark dropout under motion blur, occlusion, or difficult lighting
-- Error propagation in multi-digit sequences
-- Limited evaluation set of 70 videos
-- No physical elevator interface in the current implementation
-- Further work needed for person-to-hand association in multi-person scenes
+- Multi-digit requests can amplify individual recognition errors because a single misclassified digit propagates into the final floor sequence. The evaluation was conducted on a custom dataset of 70 videos, and the paper discusses the need for a larger and more diverse validation set, including additional glove, low-light, and borderline-pose examples.
+
+- The current implementation uses a placeholder routine for the elevator-control interface rather than directly controlling physical elevator hardware. Future work also includes improving person-to-hand association and developing more robust deployment and validation procedures.
 
 ---
 
