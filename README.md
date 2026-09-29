@@ -6,7 +6,7 @@ The implementation accompanies the paper **“Gesture-Based Elevator Control Sys
 
 **Paper DOI:** [10.1109/CFIS68949.2025.11652063](https://doi.org/10.1109/CFIS68949.2025.11652063)  
 **Author:** Kian Shojaei  
-**Supervisor / Co-author:** Elham Shabaninia
+**Supervisor:** Elham Shabaninia
 
 ---
 
