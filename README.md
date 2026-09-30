@@ -10,6 +10,30 @@ The implementation accompanies the paper **“Gesture-Based Elevator Control Sys
 
 ---
 
+## Table of Contents
+
+- [Research Overview](#research-overview)
+- [System Pipeline](#system-pipeline)
+- [State Machine](#state-machine)
+- [Gesture Vocabulary](#gesture-vocabulary)
+  - [Representative Gesture Frames](#representative-gesture-frames)
+- [Implementation Details](#implementation-details)
+  - [Hand Landmark Processing](#hand-landmark-processing)
+  - [Temporal Filtering](#temporal-filtering)
+- [Configuration](#configuration)
+- [Installation](#installation)
+- [Running the System](#running-the-system)
+  - [Hardware Interface](#hardware-interface)
+- [Dataset](#dataset)
+- [Reported Evaluation](#reported-evaluation)
+- [Limitations and Observed Failure Modes](#limitations-and-observed-failure-modes)
+- [Future Work](#future-work)
+- [Repository Structure](#repository-structure)
+- [Paper](#paper)
+- [License](#license)
+
+---
+
 ## Research Overview
 
 The system provides a contactless method for selecting positive and negative elevator floors through hand gestures. It is designed around a lightweight, interpretable pipeline rather than a large end-to-end neural classifier.
